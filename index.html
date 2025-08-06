@@ -50,6 +50,35 @@
     }
   </style>
 </head>
+
+  <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js"></script>
+
+<script>
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "firebase/app";
+  import { getAnalytics } from "firebase/analytics";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+  
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCbUiCh3sg_nBLhfVLhW0JpXcYvW3Ruh40",
+    authDomain: "boutiqueniger-1216f.firebaseapp.com",
+    projectId: "boutiqueniger-1216f",
+    storageBucket: "boutiqueniger-1216f.firebasestorage.app",
+    messagingSenderId: "80354781472",
+    appId: "1:80354781472:web:cbea13865d70928ef50f45",
+    measurementId: "G-X35P9HDWQ2"
+  };
+  
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+  
 <body>
   <!-- Navbar -->
   <nav class="navbar navbar-dark bg-dark px-3 d-flex justify-content-between align-items-center">
