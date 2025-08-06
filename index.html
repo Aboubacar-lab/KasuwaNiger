@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ma Boutique</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    /* Compactage du panier */
+    #cart-items .list-group-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+    }
+    #cart-items .item-image {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 8px;
+    }
+    #cart-items .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    #cart-items .item-info strong {
+      font-size: 0.95rem;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #cart-items .item-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    #cart-items button {
+      padding: 4px 7px;
+      font-size: 0.8rem;
+    }
+    /* Sur petits écrans, panier plein écran */
+    @media (max-width: 576px) {
+      .offcanvas {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-dark px-3 d-flex justify-content-between align-items-center">
+    <a class="navbar-brand" href="#">🛍️ Ma Boutique</a>
+
+    <!-- Recherche (desktop uniquement) -->
+    <form class="d-none d-lg-flex mx-auto w-50" role="search" onsubmit="return false;">
+      <input class="form-control me-2" type="search" placeholder="Rechercher un produit..." aria-label="Search" id="searchInput" onkeyup="filterProducts()">
+      <select class="form-select" id="availabilityFilter" onchange="filterProducts()">
+        <option value="all">Tous</option>
+        <option value="available">Disponible</option>
+        <option value="rupture">Rupture</option>
+      </select>
+    </form>
+
+    <!-- Actions (mobile & desktop) -->
+    <div class="d-flex align-items-center">
+      <!-- Icône recherche mobile -->
+      <button class="btn btn-outline-light d-lg-none me-2" data-bs-toggle="offcanvas" data-bs-target="#searchOffcanvas">
+        🔍
+      </button>
+
+      <!-- Bouton Panier -->
+      <button class="btn btn-outline-light position-relative" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
+        🛒
+        <span class="badge bg-danger position-absolute top-0 start-100 translate-middle" id="cart-count">0</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <h1 class="text-center mb-4">Nos Produits</h1>
+    <div class="row" id="product-list"></div>
+  </div>
+
+  <!-- Offcanvas Recherche (mobile) -->
+  <div class="offcanvas offcanvas-top" tabindex="-1" id="searchOffcanvas">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">🔍 Recherche</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+      <form class="d-flex" onsubmit="return false;">
+        <input class="form-control me-2" type="search" placeholder="Rechercher un produit..." id="searchInputMobile" onkeyup="filterProducts(true)">
+        <select class="form-select" id="availabilityFilterMobile" onchange="filterProducts(true)">
+          <option value="all">Tous</option>
+          <option value="available">Disponible</option>
+          <option value="rupture">Rupture</option>
+        </select>
+      </form>
+    </div>
+  </div>
+
+  <!-- Offcanvas Panier -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="cartOffcanvas">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">🛒 Votre Panier</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+      <ul class="list-group mb-3 flex-grow-1 overflow-auto" id="cart-items"></ul>
+      <div class="border-top pt-2">
+        <h5 class="d-flex justify-content-between">
+          <span>Total :</span>
+          <span id="cart-total">0</span> FCFA
+        </h5>
+        <button class="btn btn-success w-100 mt-2">✅ Passer la commande</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let products = JSON.parse(localStorage.getItem("products")) || [];
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    function saveCart() {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    }
+
+    function updateCartUI() {
+      let cartCount = document.getElementById("cart-count");
+      let cartItems = document.getElementById("cart-items");
+      let cartTotal = document.getElementById("cart-total");
+
+      cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+      cartItems.innerHTML = "";
+      let total = 0;
+
+      if (cart.length === 0) {
+        cartItems.innerHTML = `<li class="list-group-item text-center">Votre panier est vide</li>`;
+      } else {
+        cart.forEach((item, i) => {
+          total += item.price * item.quantity;
+          cartItems.innerHTML += `
+            <li class="list-group-item">
+              <img src="${item.image}" class="item-image" alt="${item.name}">
+              <div class="item-info">
+                <strong>${item.name}</strong>
+                <small>${item.price} FCFA</small>
+              </div>
+              <div class="item-controls">
+                <button class="btn btn-outline-secondary btn-sm" onclick="changeQuantity(${i}, -1)">-</button>
+                <span>${item.quantity}</span>
+                <button class="btn btn-outline-secondary btn-sm" onclick="changeQuantity(${i}, 1)">+</button>
+                <button class="btn btn-danger btn-sm" onclick="removeFromCart(${i})">🗑️</button>
+              </div>
+            </li>`;
+        });
+      }
+      cartTotal.textContent = total;
+      saveCart();
+    }
+
+    function addToCart(index) {
+      let product = products[index];
+      if (!product.available) return;
+
+      let existing = cart.find(item => item.name === product.name);
+      if (existing) {
+        existing.quantity++;
+      } else {
+        cart.push({ name: product.name, price: parseInt(product.price), quantity: 1, image: product.image });
+      }
+      updateCartUI();
+    }
+
+    function changeQuantity(index, delta) {
+      cart[index].quantity += delta;
+      if (cart[index].quantity <= 0) {
+        cart.splice(index, 1);
+      }
+      updateCartUI();
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    }
+
+    function loadProducts(filterName = "", filterAvailability = "all") {
+      let list = document.getElementById("product-list");
+      list.innerHTML = "";
+
+      let filteredProducts = products.filter(p =>
+        p.name.toLowerCase().includes(filterName.toLowerCase()) &&
+        (filterAvailability === "all" ||
+         (filterAvailability === "available" && p.available) ||
+         (filterAvailability === "rupture" && !p.available))
+      );
+
+      if (filteredProducts.length === 0) {
+        list.innerHTML = `<p class="text-center">Aucun produit trouvé.</p>`;
+        return;
+      }
+
+      filteredProducts.forEach((p, i) => {
+        list.innerHTML += `
+          <div class="col-6 col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+              <img src="${p.image}" class="card-img-top" alt="${p.name}" style="height:200px;object-fit:cover;">
+              <div class="card-body text-center">
+                <h5 class="card-title">${p.name}</h5>
+                <p class="card-text fw-bold">${p.price} FCFA</p>
+                <span class="badge bg-${p.available ? "success" : "danger"}">
+                  ${p.available ? "Disponible" : "Rupture"}
+                </span><br>
+                ${p.available ? `<button class="btn btn-primary mt-2" onclick="addToCart(${products.indexOf(p)})">Ajouter au panier</button>` : ""}
+              </div>
+            </div>
+          </div>`;
+      });
+    }
+
+    function filterProducts(isMobile = false) {
+      let input = isMobile ? document.getElementById("searchInputMobile").value : document.getElementById("searchInput").value;
+      let availability = isMobile ? document.getElementById("availabilityFilterMobile").value : document.getElementById("availabilityFilter").value;
+      loadProducts(input, availability);
+    }
+
+    loadProducts();
+    updateCartUI();
+  </script>
+</body>
+</html>

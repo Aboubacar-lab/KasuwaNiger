@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Ma Boutique</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container py-4">
+    <h2 class="mb-4">Gestion des Produits</h2>
+
+    <!-- Formulaire -->
+    <form id="product-form" class="row g-3 mb-4">
+      <input type="hidden" id="productIndex">
+      <div class="col-md-3">
+        <input type="text" id="name" class="form-control" placeholder="Nom du produit" required>
+      </div>
+      <div class="col-md-2">
+        <input type="number" id="price" class="form-control" placeholder="Prix (FCFA)" required>
+      </div>
+      <div class="col-md-3">
+        <input type="file" id="image" class="form-control" accept="image/*" required>
+      </div>
+      <div class="col-md-2">
+        <select id="available" class="form-control">
+          <option value="true">Disponible</option>
+          <option value="false">Rupture</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Ajouter</button>
+      </div>
+    </form>
+
+    <!-- Tableau -->
+    <table class="table table-bordered text-center align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Image</th>
+          <th>Nom</th>
+          <th>Prix</th>
+          <th>Disponibilité</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="product-table"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let products = JSON.parse(localStorage.getItem("products")) || [];
+
+    function saveProducts() {
+      localStorage.setItem("products", JSON.stringify(products));
+    }
+
+    function loadTable() {
+      let table = document.getElementById("product-table");
+      table.innerHTML = "";
+      products.forEach((p, i) => {
+        table.innerHTML += `
+          <tr>
+            <td><img src="${p.image}" width="80"></td>
+            <td>${p.name}</td>
+            <td>${p.price} FCFA</td>
+            <td>
+              <span class="badge bg-${p.available ? "success" : "danger"}">
+                ${p.available ? "Disponible" : "Rupture"}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-warning btn-sm" onclick="editProduct(${i})">Modifier</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteProduct(${i})">Supprimer</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    document.getElementById("product-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      let index = document.getElementById("productIndex").value;
+      let fileInput = document.getElementById("image");
+      let reader = new FileReader();
+
+      reader.onload = function(event) {
+        let product = {
+          name: document.getElementById("name").value,
+          price: document.getElementById("price").value,
+          image: event.target.result, // base64
+          available: document.getElementById("available").value === "true"
+        };
+
+        if (index === "") {
+          products.push(product);
+        } else {
+          products[index] = product;
+          document.getElementById("productIndex").value = "";
+        }
+
+        saveProducts();
+        loadTable();
+        document.getElementById("product-form").reset();
+      };
+
+      if (fileInput.files[0]) {
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+    });
+
+    function editProduct(i) {
+      let p = products[i];
+      document.getElementById("productIndex").value = i;
+      document.getElementById("name").value = p.name;
+      document.getElementById("price").value = p.price;
+      document.getElementById("available").value = p.available;
+      // ⚠️ On ne recharge pas l'image dans <input type="file">
+    }
+
+    function deleteProduct(i) {
+      products.splice(i, 1);
+      saveProducts();
+      loadTable();
+    }
+
+    loadTable();
+  </script>
+</body>
+</html>
